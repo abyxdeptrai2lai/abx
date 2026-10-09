@@ -1,0 +1,43 @@
+name: build
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC x64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Compile abyx.exe
+        shell: cmd
+        run: |
+          cl /nologo /std:c++17 /EHsc /O2 /utf-8 /DUNICODE /D_UNICODE ^
+             injector.cpp ^
+             /Fe:abyx.exe ^
+             /link /SUBSYSTEM:CONSOLE
+
+      - name: Verify
+        shell: cmd
+        run: |
+          if not exist abyx.exe (
+            echo [X] Build failed
+            exit /b 1
+          )
+          dir abyx.exe
+
+      - name: Upload abyx.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: abyx
+          path: abyx.exe
+          if-no-files-found: error
